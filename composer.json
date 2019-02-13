@@ -1,0 +1,22 @@
+{
+    "name": "stechstudio/valet-plus-phpbrew",
+    "description": "PhpBrew PHP management alongside Laravel Valet+",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Joseph",
+            "email": "joseph@stechstudio.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "ValetPhpBrew\\": "cli/Valet/"
+        }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "~/.valet/Extensions && ln -s extension.php ~/.valet/Extensions/phpbrew.php"
+        ]
+    }
+}
