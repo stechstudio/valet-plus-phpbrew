@@ -66,11 +66,11 @@ class PhpFpm extends \Valet\PhpFpm
         $list = explode(PHP_EOL, trim($this->phpbrew('list')));
 
         return collect($list)
-            ->filter(function($version) {
-                return !strstr($version, "system");
-            })
             ->map(function($version) {
                 return trim(str_replace(['php-', '* '], '', $version));
+            })
+            ->filter(function($version) {
+                return strpos($version, '5.') === 0 || strpos($version, '7.') === 0;
             });
     }
 
