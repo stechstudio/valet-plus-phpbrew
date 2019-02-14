@@ -19,6 +19,6 @@
         "post-update-cmd": ["touch post-update-cmd.txt"],
         "post-package-install": ["touch post-package-install.txt"],
         "post-package-update": ["touch post-package-update.txt"],
-        "post-autoload-dump": ["touch post-autoload-dump.txt]"
+        "post-autoload-dump": ["touch post-autoload-dump.txt"]
     }
 }
