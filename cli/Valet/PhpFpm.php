@@ -175,6 +175,6 @@ class PhpFpm extends \Valet\PhpFpm
 
     function phpbrew($command)
     {
-        return $this->cli->runAsUser(__DIR__ . "/phpbrew $command");
+        return $this->cli->runAsUser(__DIR__ . "../../bin/phpbrew $command");
     }
 }
