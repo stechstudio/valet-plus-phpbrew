@@ -33,8 +33,6 @@ class PhpFpm extends \Valet\PhpFpm
         warning("Remember to run `valet install` after installing a new version of PHP");
     }
 
-
-
     /**
      * @return bool
      */
@@ -114,25 +112,45 @@ class PhpFpm extends \Valet\PhpFpm
         info("Valet is now using PHP $version");
     }
 
+    /**
+     * Setup PHP/PHP-FPM
+     */
+    function install()
+    {
+        if (!$this->hasInstalledPhp()) {
+            throw new \DomainException('Please install PHP with PhpBrew before continuing');
+        }
+
+        $this->files->ensureDirExists('/usr/local/var/log', user());
+        $this->updateConfiguration();
+
+        $this->restart();
+    }
+
     function updateConfiguration()
     {
         parent::updateConfiguration();
 
-        if(!$this->files->exists($this->fpmPoolConfigPath())) {
-            return;
+        // With PHP 7.3 the config has changed a bit
+        $contents = $this->files->get($this->fpmConfigPath());
+
+        if(strstr($contents, ';error_log')) {
+            $contents = preg_replace('/^;?error_log = .+$/m', 'error_log = ' . VALET_HOME_PATH . '/Log/php.log', $contents);
+            $this->files->put($this->fpmConfigPath(), $contents);
         }
 
-        $contents = $this->files->get($this->fpmPoolConfigPath());
+        // And we now have to worry about the default pool config, this is where the valet.sock is required
+        if($this->files->exists($this->fpmPoolConfigPath())) {
+            $contents = $this->files->get($this->fpmPoolConfigPath());
 
-        $contents = preg_replace('/^user = .+$/m', 'user = ' . user(), $contents);
-        $contents = preg_replace('/^group = .+$/m', 'group = staff', $contents);
-        $contents = preg_replace('/^listen = .+$/m', 'listen = ' . VALET_HOME_PATH . '/valet.sock', $contents);
-        $contents = preg_replace('/^;?listen\.owner = .+$/m', 'listen.owner = ' . user(), $contents);
-        $contents = preg_replace('/^;?listen\.group = .+$/m', 'listen.group = staff', $contents);
-        $contents = preg_replace('/^;?listen\.mode = .+$/m', 'listen.mode = 0777', $contents);
-        $contents = preg_replace('/^;?php_admin_value\[error_log\] = .+$/m',
-            'php_admin_value[error_log] = ' . VALET_HOME_PATH . '/Log/php.log', $contents);
-        $this->files->put($this->fpmPoolConfigPath(), $contents);
+            $contents = preg_replace('/^listen = .+$/m', 'listen = ' . VALET_HOME_PATH . '/valet.sock', $contents);
+            $contents = preg_replace('/^;?listen\.owner = .+$/m', 'listen.owner = ' . user(), $contents);
+            $contents = preg_replace('/^;?listen\.group = .+$/m', 'listen.group = staff', $contents);
+            $contents = preg_replace('/^;?listen\.mode = .+$/m', 'listen.mode = 0777', $contents);
+            $contents = preg_replace('/^;?php_admin_value\[error_log\] = .+$/m',
+                'php_admin_value[error_log] = ' . VALET_HOME_PATH . '/Log/php.log', $contents);
+            $this->files->put($this->fpmPoolConfigPath(), $contents);
+        }
     }
 
     /**
@@ -175,6 +193,6 @@ class PhpFpm extends \Valet\PhpFpm
 
     function phpbrew($command)
     {
-        return $this->cli->runAsUser(__DIR__ . "../../bin/phpbrew $command");
+        return $this->cli->runAsUser(__DIR__ . "/../../bin/phpbrew $command");
     }
 }

@@ -15,8 +15,10 @@
         }
     },
     "scripts": {
-        "post-package-install": [
-            "mkdir -p ~/.valet/Extensions && ln -s ~/.composer/vendor/stechstudio/valet-plus-phpbrew/extension.php ~/.valet/Extensions/phpbrew.php"
-        ]
+        "post-install-cmd": "echo 'post-install-cmd'",
+        "post-update-cmd": "echo 'post-update-cmd'",
+        "post-package-install": "echo 'post-package-install'",
+        "post-package-update": "echo 'post-package-update'",
+        "post-autoload-dump": "echo 'post-autoload-dump'"
     }
 }
