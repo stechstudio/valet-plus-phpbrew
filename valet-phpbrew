@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+mkdir -p ~/.valet/Extensions
+ln -s ~/.composer/vendor/stechstudio/valet-plus-phpbrew/extension.php ~/.valet/Extensions/phpbrew.php

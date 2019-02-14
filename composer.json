@@ -14,11 +14,7 @@
             "ValetPhpBrew\\": "cli/Valet/"
         }
     },
-    "scripts": {
-        "post-install-cmd": ["/bin/echo 'post-install-cmd'"],
-        "post-update-cmd": ["/bin/echo 'post-update-cmd'"],
-        "post-package-install": ["/bin/echo 'post-package-install'"],
-        "post-package-update": ["/bin/echo 'post-package-update'"],
-        "post-autoload-dump": ["/bin/echo 'post-autoload-dump'"]
-    }
+    "bin": [
+        "valet-phpbrew"
+    ]
 }
