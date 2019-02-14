@@ -15,10 +15,10 @@
         }
     },
     "scripts": {
-        "post-install-cmd": ["touch post-install-cmd.txt"],
-        "post-update-cmd": ["touch post-update-cmd.txt"],
-        "post-package-install": ["touch post-package-install.txt"],
-        "post-package-update": ["touch post-package-update.txt"],
-        "post-autoload-dump": ["touch post-autoload-dump.txt"]
+        "post-install-cmd": ["/bin/echo 'post-install-cmd'"],
+        "post-update-cmd": ["/bin/echo 'post-update-cmd'"],
+        "post-package-install": ["/bin/echo 'post-package-install'"],
+        "post-package-update": ["/bin/echo 'post-package-update'"],
+        "post-autoload-dump": ["/bin/echo 'post-autoload-dump'"]
     }
 }
