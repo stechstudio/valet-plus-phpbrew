@@ -129,7 +129,7 @@ class PhpFpm extends \Valet\PhpFpm
         $this->updateConfiguration();
 
         info('[php] Installing apcu');
-        $this->phpbrew('ext install apcu stable');
+        echo $this->phpbrew('ext install apcu stable');
 
         $this->restart();
     }
@@ -192,13 +192,13 @@ class PhpFpm extends \Valet\PhpFpm
     function stop()
     {
         info('[phpfpm] Stopping');
-        $this->phpbrew('fpm stop');
+        echo $this->phpbrew('fpm stop');
     }
 
     function restart()
     {
         info('[phpfpm] Restarting');
-        $this->phpbrew('fpm restart');
+        echo $this->phpbrew('fpm restart');
     }
 
     function fpmConfigPath()
