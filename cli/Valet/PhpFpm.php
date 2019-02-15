@@ -119,7 +119,7 @@ class PhpFpm extends \Valet\PhpFpm
 
         if(!$this->linkedPhp()) {
             $version = $this->installedVersions()->sort()->reverse()->first();
-            info("Cannot determine linked version of PHP. Switching to $version. Run `valet use [version]` to use a different version");
+            info("[php] Linking $version");
 
             $this->stop();
             $this->link($version);
@@ -128,6 +128,7 @@ class PhpFpm extends \Valet\PhpFpm
         $this->files->ensureDirExists('/usr/local/var/log', user());
         $this->updateConfiguration();
 
+        info('[php] Installing apcu');
         $this->phpbrew('ext install apcu stable');
 
         $this->restart();
@@ -167,7 +168,7 @@ class PhpFpm extends \Valet\PhpFpm
         $systemZoneName = str_replace('/usr/share/zoneinfo/', '', $systemZoneName);
         // macOS High Sierra has a new location for the timezone info
         $systemZoneName = str_replace('/var/db/timezone/zoneinfo/', '', $systemZoneName);
-        $contents = $this->files->get(__DIR__ . '/../stubs/z-performance.ini');
+        $contents = $this->files->get($this->stubsPath() . '/z-performance.ini');
         $contents = str_replace('TIMEZONE', $systemZoneName, $contents);
 
         $iniPath = $this->iniPath();
@@ -190,11 +191,13 @@ class PhpFpm extends \Valet\PhpFpm
 
     function stop()
     {
+        info('[phpfpm] Stopping');
         $this->phpbrew('fpm stop');
     }
 
     function restart()
     {
+        info('[phpfpm] Restarting');
         $this->phpbrew('fpm restart');
     }
 
@@ -211,6 +214,11 @@ class PhpFpm extends \Valet\PhpFpm
     function iniPath()
     {
         return trim(str_replace('bin/php', 'var/db', $this->cli->runAsUser('which php')));
+    }
+
+    function stubsPath()
+    {
+        return trim(str_replace('bin/valet', 'weprovide/valet-plus/cli/stubs', $this->cli->runAsUser('which valet')));
     }
 
     function phpbrew($command)
