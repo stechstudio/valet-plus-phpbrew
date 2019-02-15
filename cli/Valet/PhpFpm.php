@@ -23,7 +23,14 @@ class PhpFpm extends \Valet\PhpFpm
 //        }
 
         if($installedVersion = $this->hasInstalledVersion($version)) {
+            info("Switching to $version");
+
+            $this->stop();
             $this->link($installedVersion);
+
+            $this->restart();
+            info("Valet is now using PHP $version");
+
             return;
         }
 
@@ -80,17 +87,13 @@ class PhpFpm extends \Valet\PhpFpm
     function linkedPhp()
     {
         if (!$this->files->isLink('/usr/local/bin/php')) {
-            throw new \DomainException("Unable to determine linked PHP.");
+            return false;
         }
 
         $resolvedPath = $this->files->readLink('/usr/local/bin/php');
         preg_match("|/php-([0-9\.]*)|", $resolvedPath, $matches);
 
-        if(array_key_exists(1, $matches)) {
-            return $matches[1];
-        }
-
-        throw new \DomainException("Unable to determine linked PHP.");
+        return array_key_exists(1, $matches) ? $matches[1] : false;
     }
 
     /**
@@ -101,15 +104,9 @@ class PhpFpm extends \Valet\PhpFpm
      */
     function link($version)
     {
-        info("Switching to $version");
-
-        $this->stop();
         $this->phpbrew("switch $version");
 
         $this->files->symlink($_SERVER['HOME'] . "/.phpbrew/php/php-$version/bin/php", '/usr/local/bin/php');
-
-        $this->restart();
-        info("Valet is now using PHP $version");
     }
 
     /**
@@ -121,36 +118,63 @@ class PhpFpm extends \Valet\PhpFpm
             throw new \DomainException('Please install PHP with PhpBrew before continuing');
         }
 
+        if(!$this->linkedPhp()) {
+            $version = $this->installedVersions()->sort()->reverse()->first();
+            info("Cannot determine linked version of PHP. Switching to $version. Run `valet use [version]` to use a different version");
+
+            $this->stop();
+            $this->link($version);
+        }
+
         $this->files->ensureDirExists('/usr/local/var/log', user());
         $this->updateConfiguration();
 
+        $this->phpbrew('ext install apcu stable');
+
         $this->restart();
+        die();
     }
 
     function updateConfiguration()
     {
-        parent::updateConfiguration();
+        //parent::updateConfiguration();
+        $this->updateFpmConfig($this->fpmConfigPath());
+        $this->updateFpmConfig($this->fpmPoolConfigPath());
+        $this->updateTimezoneConfig();
+    }
 
-        // With PHP 7.3 the config has changed a bit
-        $contents = $this->files->get($this->fpmConfigPath());
-
-        if(strstr($contents, ';error_log')) {
-            $contents = preg_replace('/^;?error_log = .+$/m', 'error_log = ' . VALET_HOME_PATH . '/Log/php.log', $contents);
-            $this->files->put($this->fpmConfigPath(), $contents);
+    function updateFpmConfig($path)
+    {
+        if(!$this->files->exists($path)) {
+            return;
         }
 
-        // And we now have to worry about the default pool config, this is where the valet.sock is required
-        if($this->files->exists($this->fpmPoolConfigPath())) {
-            $contents = $this->files->get($this->fpmPoolConfigPath());
+        $contents = $this->files->get($path);
 
-            $contents = preg_replace('/^listen = .+$/m', 'listen = ' . VALET_HOME_PATH . '/valet.sock', $contents);
-            $contents = preg_replace('/^;?listen\.owner = .+$/m', 'listen.owner = ' . user(), $contents);
-            $contents = preg_replace('/^;?listen\.group = .+$/m', 'listen.group = staff', $contents);
-            $contents = preg_replace('/^;?listen\.mode = .+$/m', 'listen.mode = 0777', $contents);
-            $contents = preg_replace('/^;?php_admin_value\[error_log\] = .+$/m',
-                'php_admin_value[error_log] = ' . VALET_HOME_PATH . '/Log/php.log', $contents);
-            $this->files->put($this->fpmPoolConfigPath(), $contents);
-        }
+        $contents = preg_replace('/^listen = .+$/m', 'listen = ' . VALET_HOME_PATH . '/valet.sock', $contents);
+        $contents = preg_replace('/^;?listen\.owner = .+$/m', 'listen.owner = ' . user(), $contents);
+        $contents = preg_replace('/^;?listen\.group = .+$/m', 'listen.group = staff', $contents);
+        $contents = preg_replace('/^;?listen\.mode = .+$/m', 'listen.mode = 0777', $contents);
+        $contents = preg_replace('/^;?php_admin_value\[error_log\] = .+$/m',
+            'php_admin_value[error_log] = ' . VALET_HOME_PATH . '/Log/php.log', $contents);
+        $contents = preg_replace('/^;?error_log = .+$/m', 'error_log = ' . VALET_HOME_PATH . '/Log/php.log', $contents);
+
+        $this->files->put($path, $contents);
+    }
+
+    function updateTimezoneConfig()
+    {
+        $systemZoneName = readlink('/etc/localtime');
+        // All versions below High Sierra
+        $systemZoneName = str_replace('/usr/share/zoneinfo/', '', $systemZoneName);
+        // macOS High Sierra has a new location for the timezone info
+        $systemZoneName = str_replace('/var/db/timezone/zoneinfo/', '', $systemZoneName);
+        $contents = $this->files->get(__DIR__ . '/../stubs/z-performance.ini');
+        $contents = str_replace('TIMEZONE', $systemZoneName, $contents);
+
+        $iniPath = $this->iniPath();
+        $this->files->ensureDirExists($iniPath, user());
+        $this->files->putAsUser($this->iniPath() . '/z-performance.ini', $contents);
     }
 
     /**
@@ -188,7 +212,7 @@ class PhpFpm extends \Valet\PhpFpm
 
     function iniPath()
     {
-        return trim(str_replace('var/db', 'etc/php-fpm.conf', $this->cli->runAsUser('which php')));
+        return trim(str_replace('bin/php', 'var/db', $this->cli->runAsUser('which php')));
     }
 
     function phpbrew($command)
