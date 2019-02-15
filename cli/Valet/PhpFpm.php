@@ -36,7 +36,6 @@ class PhpFpm extends \Valet\PhpFpm
 
         warning("PHP $version is not installed. You need to install with PhpBrew first. We suggest running:");
         echo "phpbrew install $version +default+fpm+dbs\n";
-
         warning("Remember to run `valet install` after installing a new version of PHP");
     }
 
@@ -132,7 +131,6 @@ class PhpFpm extends \Valet\PhpFpm
         $this->phpbrew('ext install apcu stable');
 
         $this->restart();
-        die();
     }
 
     function updateConfiguration()
